@@ -1,16 +1,14 @@
 from flask import Flask, request, jsonify, render_template
 import openai
 from newspaper import Article
-from dotenv import load_dotenv
 
 import os
 
 
 app = Flask(__name__)
 
-load_dotenv()
 
-api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = "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"
 
 
 @app.route('/')
