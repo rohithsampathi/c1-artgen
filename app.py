@@ -11,7 +11,7 @@ app = Flask(__name__)
 load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
-print(api_key)
+
 
 @app.route('/')
 def home():
