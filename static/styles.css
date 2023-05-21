@@ -74,6 +74,12 @@ button:hover {
   height: 64px !important; /* Set height for 2 lines of text */
 }
 
+#news-output {
+  width: 100%; /* or specific pixel value */
+  height: 500px; /* or specific pixel value */
+}
+
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

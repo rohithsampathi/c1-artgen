@@ -70,4 +70,6 @@ function updateElapsedTime(startTime) {
       generateBtn.click();
     });
   }
+
+
   
