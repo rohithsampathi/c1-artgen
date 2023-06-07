@@ -1,12 +1,9 @@
 from flask import Flask, request, jsonify, render_template
 import openai
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import time
+from newspaper import Article, Config
 
 app = Flask(__name__)
-openai.api_key = "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"
+openai.api_key = "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"
 
 
 @app.route('/')
@@ -31,35 +28,29 @@ def generate_route():
 
 def process_url(url):
     try:
-        options = Options()
-        options.add_argument('--headless')
-        driver = webdriver.Chrome(options=options)
+        # Configure the newspaper package
+        config = Config()
+        config.fetch_images = False
+        config.memoize_articles = False
 
         print(f"URL: {url}")
-        driver.get(url)
-        time.sleep(10)  # Allow the page to load
-        html_content = driver.page_source
-        print(f"HTML content length: {len(html_content)}")
 
-        soup = BeautifulSoup(html_content, 'html.parser')
+        # Download, parse, and extract the necessary information from the article
+        article = Article(url, config=config)
+        article.download()
+        article.parse()
+        print(f"HTML content length: {len(article.html)}")
 
-        headline = soup.find('h1').text.strip() if soup.find('h1') else "Not found"
+        # Extract the headline and content of the article
+        headline = article.title.strip()
         print(f"Headline: {headline}")
-
-        # Search the body content and find all paragraphs
-        body = soup.body
-        paragraphs = body.find_all('p') if body else []
-        print(f"Paragraphs: {len(paragraphs)}")
-
-        # Handle NoneType text in case of empty paragraph tags
-        content_body = "\n\n".join([p.text.strip() if p.text is not None else "" for p in paragraphs])
+        content_body = article.text.strip()
         print(f"Body: {content_body}")
 
-        content = f"Heading: {headline}\n\nSnippet: {content_body}\n\n"
+        # Create a string containing the headline and content body
+        news_content = f"Heading: {headline}\n\nSnippet: {content_body}\n\n"
+        return news_content
 
-        driver.quit()
-
-        return content
     except Exception as e:
         print(f"Error processing URL {url}: {str(e)}")
         return None
@@ -76,7 +67,7 @@ def generate(news_content, search_terms, theme):
 
         MUST Follow rules:
         1. Make the content 100% human-like. Rephrase the source content completely
-        2. Do not end the article abruptly. Do not exceed 800 words.
+        2. Do not end the article abruptly. Do not exceed 900 words.
         3. Do not use robotic sounding words and avoid using technical jargon. 
         4. Add more details and examples to make the article highly informative.
         5. Remove any references as a large language model or chatbot. "DataM Intelligence" alone should be quoted as reference in the entire article
@@ -86,7 +77,7 @@ def generate(news_content, search_terms, theme):
         \n
         Introduction paragraph giving the market overview
         \n
-        Side Heading: Should include the phrases from {search_terms}
+        Side Heading: Should include the keywords from {search_terms}
         Content: Should elaborate the side headings using the text from [news content]
 
         [Similarly for more side headings]
