@@ -15,22 +15,31 @@
   </head>
   <body>
     <div class="container">
-      <h1 class="mt-5">Market Brahma - AI Content Assistant</h1>
-      <form id="generate-form">
-        <div class="form-group mt-2">
-            <label for="news-input">Enter a URL:</label>
-            <input type="text" class="form-control dynamic-height input-field" id="news-input" name="news">
+        <h1 class="mt-5">Market Brahma - AI Content Assistant</h1>
+        <form id="generate-form">
+          <div class="form-group mt-2">
+              <label for="market-name-input">Enter Market Name:</label>
+              <input type="text" class="form-control dynamic-height input-field" id="market-name-input" name="market">
+            </div>
+          <div class="form-group mt-2">
+              <label for="body-input">Enter body context:</label>
+              <textarea class="form-control dynamic-height" id="body-input" name="body" rows="5"></textarea>
           </div>
           <div class="form-group mt-2">
-            <label for="search-terms-input">Enter Search Terms:</label>
-            <textarea class="form-control dynamic-height" id="search-terms-input" name="search_terms" rows="1"></textarea>
+              <label for="search-terms-input">Enter Search Terms:</label>
+              <textarea class="form-control dynamic-height" id="search-terms-input" name="search_terms" rows="1"></textarea>
           </div>
           <div class="form-group mt-2">
-            <label for="theme-input">Enter Theme:</label>
-            <textarea class="form-control dynamic-height" id="theme-input" name="theme" rows="1"></textarea>
+              <label for="theme-input">Enter Theme:</label>
+              <textarea class="form-control dynamic-height" id="theme-input" name="theme" rows="1"></textarea>
           </div>
-        <button id="generate-btn" type="submit" class="btn btn-primary mt-3">Generate Summary</button>
-    </form>
+          <div class="form-group mt-2">
+              <label for="num-words-input">Enter Number of Words:</label>
+              <input type="number" class="form-control dynamic-height input-field" id="num-words-input" name="num_words">
+          </div>
+          
+          <button id="generate-btn" type="submit" class="btn btn-primary mt-3">Generate Article</button>
+      </form>
     
       <div id="loader" class="spinner-border mt-3 hidden" role="status">
         <span class="sr-only">Loading...</span>

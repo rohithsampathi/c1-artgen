@@ -12,9 +12,7 @@ function adjustHeight(element, defaultHeight) {
 
 const dynamicHeightInputs = Array.from(document.getElementsByClassName("dynamic-height"));
 dynamicHeightInputs.forEach(input => {
-  // Apply the height adjustment when the input changes
   input.addEventListener('input', () => adjustHeight(input, '1em'));
-  // Initialize the correct height on page load
   adjustHeight(input, '1em');
 });
 
@@ -23,13 +21,17 @@ if (generateBtn) {
   generateBtn.addEventListener("click", async event => {
     event.preventDefault();
 
-    const newsInput = document.getElementById("news-input");
+    const bodyInput = document.getElementById("body-input");
+    const searchTermsInput = document.getElementById("search-terms-input");
+    const themeInput = document.getElementById("theme-input");
+    const numWordsInput = document.getElementById("num-words-input");
+    const marketNameInput = document.getElementById("market-name-input");
     const newsOutput = document.getElementById("news-output");
     const loader = document.getElementById("loader");
     const elapsedTimeContainer = document.getElementById("elapsed-time-container");
 
-    if (!newsInput.value) {
-      alert("Please enter a valid URL before generating the post.");
+    if (!bodyInput.value) {
+      alert("Please enter a valid body context before generating the article.");
       return;
     }
 
@@ -41,9 +43,11 @@ if (generateBtn) {
     const elapsedTimeInterval = setInterval(() => updateElapsedTime(startTime), 1000);
 
     const formData = new FormData();
-    formData.append("news", newsInput.value);
-    formData.append("search_terms", document.getElementById("search-terms-input").value);
-    formData.append("theme", document.getElementById("theme-input").value);
+    formData.append("body", bodyInput.value);
+    formData.append("search_terms", searchTermsInput.value);
+    formData.append("theme", themeInput.value);
+    formData.append("num_words", numWordsInput.value);
+    formData.append("market", marketNameInput.value);
 
     try {
       const response = await fetch("/generate", { method: "POST", body: formData });
@@ -53,7 +57,7 @@ if (generateBtn) {
       }
       loader.classList.add("hidden");
       clearInterval(elapsedTimeInterval);
-      newsOutput.value = data.result.art_output;
+      newsOutput.value = data.result.result;
     } catch (error) {
       console.error("Error:", error);
       loader.classList.add("hidden");
@@ -66,7 +70,7 @@ if (generateBtn) {
 const regenerateBtn = document.getElementById("regenerate-btn");
 if (regenerateBtn) {
   regenerateBtn.addEventListener("click", () => {
-    document.getElementById("news-input").value = "";
+    document.getElementById("body-input").value = "";
     document.getElementById("news-output").value = "";
     generateBtn.click();
   });
