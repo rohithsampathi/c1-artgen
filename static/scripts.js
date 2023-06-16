@@ -57,7 +57,7 @@ if (generateBtn) {
       }
       loader.classList.add("hidden");
       clearInterval(elapsedTimeInterval);
-      newsOutput.value = data.result.result;
+      newsOutput.value = data.result; // <--- changed this line
     } catch (error) {
       console.error("Error:", error);
       loader.classList.add("hidden");

@@ -67,7 +67,9 @@ def generate_article(body, search_terms, theme, num_words, market_name):
             presence_penalty=0.3,
         )
         print("After GPT-4 API call")
+        print(response)
         result = response.choices[0].message['content'].strip()
+        num_tokens = response['usage']['total_tokens'] if 'usage' in response and 'total_tokens' in response['usage'] else 0
 
         # Insert the conversion details into MongoDB
         conversion_data = {
@@ -80,9 +82,10 @@ def generate_article(body, search_terms, theme, num_words, market_name):
                 'body': body,
             },
             'output': result,
-            'num_tokens': response['usage']['total_tokens'],
+            'num_tokens': num_tokens,
         }
-        conversions_col.insert_one(conversion_data)  # insert the conversion data into MongoDB
+        conversions_col.insert_one(conversion_data)
+
         return {"result": result}
     except Exception as e:
         print(f"Error in generate function: {str(e)}")
