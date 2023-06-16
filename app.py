@@ -9,18 +9,15 @@ import datetime
 load_dotenv()
 
 class Config:
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
+    OPENAI_API_KEY = "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"
+    MONGODB_PASSWORD = "ValeyforgE!16"
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
 app.config.from_object(Config)
 app.config["MONGO_URI"] = "mongodb+srv://Rohith:ValeyforgE!16@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
-print(app.config)
 mongo = PyMongo(app)
 db = mongo.db
-print(f"mongo: {mongo}")
-print(f"mongo.db: {mongo.db}")
 
 
 # Initialize OpenAI
@@ -36,10 +33,10 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         4. Reader should read the article and request for a sample report of the market from DataM Intelligence.
 
         MUST Follow rules:
-        1. Use the [Search Terms] within the content. 
+        1. Use the [Search Terms] within the content.
         2. Make the content 100% human-like. Rephrase the provided body completely.
         3. Maintain the [Word Count] for article length.
-        4. Do not use robotic and magical words. Avoid using technical jargon. 
+        4. Do not use robotic and magical words. Avoid using technical jargon.
         5. Make the article world-class and informative by including latest trends and news.
         6. Remove any references as a large language model or chatbot. "DataM Intelligence" alone should be quoted as reference in the entire article
 
@@ -49,11 +46,11 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         Introduction paragraph giving the market overview
         \n
         Side Heading: Should include the [Search Terms]
-        Content: 
+        Content:
 
         [Similarly for 3 more side headings]
 
-        Future of [Market Name] with [Theme] 
+        Future of [Market Name] with [Theme]
         [Redirect the reader to download-sample page]
 
             ------------------------- End of Instructions -------------------------
@@ -76,10 +73,12 @@ def generate_article(body, search_terms, theme, num_words, market_name):
             presence_penalty=0.3,
         )
         print("After GPT-4 API call")
-        print(response)
         result = response.choices[0].message['content'].strip()
         num_tokens = response['usage']['total_tokens'] if 'usage' in response and 'total_tokens' in response['usage'] else 0
-        
+
+        # Prepare the output
+        output = {"result": result}
+
         # Insert the conversion details into MongoDB
         conversion_data = {
             'timestamp': datetime.datetime.utcnow(),
@@ -93,10 +92,16 @@ def generate_article(body, search_terms, theme, num_words, market_name):
             'output': result,
             'num_tokens': num_tokens,
         }
-        # When you collect conversion_data...
-        mongo.db.conversions.insert_one(conversion_data)
 
-        return {"result": result}
+        # Try to insert the data into MongoDB
+        try:
+            mongo.db.articles.insert_one(conversion_data)
+        except Exception as e:
+            print(f"Failed to insert data into MongoDB: {e}")
+            output['db_error'] = str(e)
+
+        return output
+
     except Exception as e:
         print(f"Error in generate function: {str(e)}")
         return {"result": "An error occurred during generation"}
@@ -104,7 +109,7 @@ def generate_article(body, search_terms, theme, num_words, market_name):
 def get_conversions_col():
     conversions_col = None
     try:
-        conversions_col = mongo.db.conversions
+        conversions_col = mongo.db.articles
     except AttributeError as e:
         print("Failed to access MongoDB collection: ", str(e))
     return conversions_col
@@ -141,15 +146,16 @@ def generate():
 
         result = generate_article(body, search_terms, theme, num_words, market_name)
         output = {"result": result["result"]}
-        
-        conversions_col = None
-        try:
-            conversions_col = mongo.db.conversions
-        except AttributeError as e:
-            print("Failed to access MongoDB collection: ", str(e))
-            return jsonify(error='Failed to access MongoDB collection'), 500
-        
+
+        # Handle potential database error
+        if 'db_error' in result:
+            output['db_error'] = result['db_error']
+
         return jsonify(output)
+
+    except Exception as e:
+        print("Error in generate endpoint: ", e)
+        return jsonify(error=str(e)), 500
 
     except Exception as e:
         print("Error in generate endpoint: ", e)
