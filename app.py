@@ -1,21 +1,30 @@
-from pymongo import MongoClient
+from flask import Flask, render_template, request, jsonify, current_app
+from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 import openai
 import os
 import datetime
-from flask import Flask, render_template, request, jsonify
 
-
+# Load environment variables
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-password = os.getenv("MONGODB_PASSWORD")
 
-# MongoDB client setup 
-client = MongoClient(f"mongodb+srv://Rohith:{password}@montaigne.c676utg.mongodb.net/?retryWrites=true&w=majority")
-db = client["montaigne"] # replace with your database name
-conversions_col = db.conversions # change 'conversions' to desired collection name
+class Config:
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
 
+# Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
+app.config.from_object(Config)
+app.config["MONGO_URI"] = "mongodb+srv://Rohith:ValeyforgE!16@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
+print(app.config)
+mongo = PyMongo(app)
+db = mongo.db
+print(f"mongo: {mongo}")
+print(f"mongo.db: {mongo.db}")
+
+
+# Initialize OpenAI
+openai.api_key = app.config["OPENAI_API_KEY"]
 
 def generate_article(body, search_terms, theme, num_words, market_name):
     writing_style = f"""
@@ -70,7 +79,7 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         print(response)
         result = response.choices[0].message['content'].strip()
         num_tokens = response['usage']['total_tokens'] if 'usage' in response and 'total_tokens' in response['usage'] else 0
-
+        
         # Insert the conversion details into MongoDB
         conversion_data = {
             'timestamp': datetime.datetime.utcnow(),
@@ -84,13 +93,22 @@ def generate_article(body, search_terms, theme, num_words, market_name):
             'output': result,
             'num_tokens': num_tokens,
         }
-        conversions_col.insert_one(conversion_data)
+        # When you collect conversion_data...
+        mongo.db.conversions.insert_one(conversion_data)
 
         return {"result": result}
     except Exception as e:
         print(f"Error in generate function: {str(e)}")
         return {"result": "An error occurred during generation"}
-    
+
+def get_conversions_col():
+    conversions_col = None
+    try:
+        conversions_col = mongo.db.conversions
+    except AttributeError as e:
+        print("Failed to access MongoDB collection: ", str(e))
+    return conversions_col
+
 def main():
     print("Enter the body text:")
     body = input()
@@ -110,6 +128,8 @@ def main():
 def index():
     return render_template("index.html")
 
+
+
 @app.route("/generate", methods=["POST"])
 def generate():
     try:
@@ -121,11 +141,25 @@ def generate():
 
         result = generate_article(body, search_terms, theme, num_words, market_name)
         output = {"result": result["result"]}
+        
+        conversions_col = None
+        try:
+            conversions_col = mongo.db.conversions
+        except AttributeError as e:
+            print("Failed to access MongoDB collection: ", str(e))
+            return jsonify(error='Failed to access MongoDB collection'), 500
+        
         return jsonify(output)
 
     except Exception as e:
         print("Error in generate endpoint: ", e)
         return jsonify(error=str(e)), 500
+
+
+@app.errorhandler(500)
+def server_error(e):
+    print("Internal server error: ", str(e))
+    return jsonify(error='Internal server error'), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
