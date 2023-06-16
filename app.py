@@ -9,8 +9,8 @@ import datetime
 load_dotenv()
 
 class Config:
-    OPENAI_API_KEY = "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"
-    MONGODB_PASSWORD = "ValeyforgE!16"
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD")
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
