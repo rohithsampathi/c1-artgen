@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import openai
 import os
 import datetime
+from urllib.parse import quote
 
 # Load environment variables
 load_dotenv()
@@ -15,7 +16,7 @@ class Config:
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config["MONGO_URI"] = "mongodb+srv://Rohith:ValeyforgE!16@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
+app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
 db = mongo.db
 
