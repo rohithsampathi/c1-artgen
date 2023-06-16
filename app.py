@@ -1,7 +1,21 @@
+from pymongo import MongoClient
+from dotenv import load_dotenv
 import openai
+import os
+import datetime
 from flask import Flask, render_template, request, jsonify
 
-openai.api_key = "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"
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+password = os.getenv("MONGODB_PASSWORD")
+
+# MongoDB client setup 
+client = MongoClient(f"mongodb+srv://Rohith:{password}@montaigne.c676utg.mongodb.net/?retryWrites=true&w=majority")
+db = client["montaigne"] # replace with your database name
+conversions_col = db.conversions # change 'conversions' to desired collection name
+
+app = Flask(__name__)
 
 def generate_article(body, search_terms, theme, num_words, market_name):
     writing_style = f"""
@@ -54,6 +68,21 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         )
         print("After GPT-4 API call")
         result = response.choices[0].message['content'].strip()
+
+        # Insert the conversion details into MongoDB
+        conversion_data = {
+            'timestamp': datetime.datetime.utcnow(),
+            'input': {
+                'market_name': market_name,
+                'search_terms': search_terms,
+                'theme': theme,
+                'num_words': num_words,
+                'body': body,
+            },
+            'output': result,
+            'num_tokens': response['usage']['total_tokens'],
+        }
+        conversions_col.insert_one(conversion_data)  # insert the conversion data into MongoDB
         return {"result": result}
     except Exception as e:
         print(f"Error in generate function: {str(e)}")
@@ -74,8 +103,6 @@ def main():
     result = generate_article(body, search_terms, theme, num_words, market_name)
     print(result["result"])
 
-app = Flask(__name__)
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -90,7 +117,7 @@ def generate():
         market_name = request.form["market"]
 
         result = generate_article(body, search_terms, theme, num_words, market_name)
-        output = {"result": result}
+        output = {"result": result["result"]}
         return jsonify(output)
 
     except Exception as e:
