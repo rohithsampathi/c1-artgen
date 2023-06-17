@@ -5,6 +5,8 @@ import openai
 import os
 import datetime
 from urllib.parse import quote
+import boto3
+
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +25,13 @@ db = mongo.db
 
 # Initialize OpenAI
 openai.api_key = app.config["OPENAI_API_KEY"]
+
+def get_s3_static_url(filename):
+    s3_client = boto3.client('s3')
+    bucket_name = 'marketbrahma'  # Replace with your S3 bucket name
+    s3_url = s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket_name, 'Key': filename}, ExpiresIn=3600)
+    return s3_url
+
 
 def generate_article(body, search_terms, theme, num_words, market_name):
     writing_style = f"""
@@ -132,7 +141,10 @@ def main():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    css_file = get_s3_static_url('css/styles.css')
+    js_file = get_s3_static_url('js/script.js')
+    return render_template("index.html", css_file=css_file, js_file=js_file)
+
 
 
 
