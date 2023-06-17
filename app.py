@@ -27,9 +27,7 @@ db = mongo.db
 openai.api_key = app.config["OPENAI_API_KEY"]
 
 def get_s3_static_url(filename):
-    s3_client = boto3.client('s3')
-    bucket_name = 'marketbrahma'  # Replace with your S3 bucket name
-    s3_url = s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket_name, 'Key': filename}, ExpiresIn=3600)
+    s3_url = f's3://marketbrahma/static/{filename}'
     return s3_url
 
 
@@ -144,8 +142,6 @@ def index():
     css_file = get_s3_static_url('css/styles.css')
     js_file = get_s3_static_url('js/script.js')
     return render_template("index.html", css_file=css_file, js_file=js_file)
-
-
 
 
 @app.route("/generate", methods=["POST"])
