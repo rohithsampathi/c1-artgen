@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, current_app
+from flask import Flask, render_template, request, jsonify, current_app, send_from_directory
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 import openai
@@ -6,7 +6,7 @@ import os
 import datetime
 from urllib.parse import quote
 import boto3
-
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +17,7 @@ class Config:
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 app.config.from_object(Config)
 app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
