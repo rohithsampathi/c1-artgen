@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 import openai
@@ -6,7 +6,6 @@ import os
 import datetime
 from urllib.parse import quote
 import boto3
-from flask_cors import CORS, cross_origin
 
 # Load environment variables
 load_dotenv()
@@ -17,7 +16,6 @@ class Config:
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
-CORS(app)
 app.config.from_object(Config)
 app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
@@ -122,38 +120,49 @@ def get_conversions_col():
 def index():
     return render_template("index.html")
 
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+@app.route("/api/generate", methods=["OPTIONS"])
+def generate_options():
+    response = jsonify()
+    add_cors_headers(response)
+    return response
+
 @app.route("/api/generate", methods=["POST"])
-@cross_origin()
 def generate():
-    try:
-        if request.is_json:
-            data = request.get_json()
-        else:
-            data = request.form
-        body = data.get("body")
-        search_terms = data.get("search_terms")
-        theme = data.get("theme")
-        num_words = int(data.get("num_words"))
-        market_name = data.get("market")
+    if request.is_json:
+        data = request.get_json()
+    else:
+        data = request.form
 
-        # Use the generate_article function
-        result = generate_article(body, search_terms, theme, num_words, market_name)
-        output = {"result": result["result"]}
+    body = data.get("body")
+    search_terms = data.get("search_terms")
+    theme = data.get("theme")
+    num_words = int(data.get("num_words"))
+    market_name = data.get("market")
 
-        # Handle potential database error
-        if 'db_error' in result:
-            output['db_error'] = result['db_error']
+    # Use the generate_article function
+    result = generate_article(body, search_terms, theme, num_words, market_name)
+    output = {"result": result["result"]}
 
-        return jsonify(output)
+    # Handle potential database error
+    if 'db_error' in result:
+        output['db_error'] = result['db_error']
 
-    except Exception as e:
-        print("Error in generate endpoint: ", e)
-        return jsonify(error=str(e)), 500
+    response = jsonify(output)
+    add_cors_headers(response)
+    return response
 
 @app.errorhandler(500)
 def server_error(e):
     print("Internal server error: ", str(e))
-    return jsonify(error='Internal server error'), 500
+    response = jsonify(error='Internal server error'), 500
+    add_cors_headers(response)
+    return response
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000)
