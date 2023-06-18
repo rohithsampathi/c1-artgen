@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, current_app, send_from_directory
+from flask import Flask, render_template, request, jsonify
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 import openai
@@ -17,12 +17,11 @@ class Config:
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+CORS(app)
 app.config.from_object(Config)
 app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
 db = mongo.db
-
 
 # Initialize OpenAI
 openai.api_key = app.config["OPENAI_API_KEY"]
@@ -136,21 +135,19 @@ def main():
 
 @app.route("/")
 def index():
-    css_file = 'https://d2nb6w4uhiu3h2.cloudfront.net/static/styles.css'
-    js_file = 'https://d2nb6w4uhiu3h2.cloudfront.net/static/scripts.js'
+    return render_template("index.html")
 
-    return render_template("index.html", css_file=css_file, js_file=js_file)
-
-
-@app.route("/generate", methods=["POST"])
+@app.route("/api/generate", methods=["POST"])
 def generate():
     try:
-        body = request.form["body"]
-        search_terms = request.form["search_terms"]
-        theme = request.form["theme"]
-        num_words = int(request.form["num_words"])
-        market_name = request.form["market"]
+        data = request.get_json()
+        body = data["body"]
+        search_terms = data["search_terms"]
+        theme = data["theme"]
+        num_words = int(data["num_words"])
+        market_name = data["market"]
 
+        # Use the generate_article function
         result = generate_article(body, search_terms, theme, num_words, market_name)
         output = {"result": result["result"]}
 
@@ -163,11 +160,6 @@ def generate():
     except Exception as e:
         print("Error in generate endpoint: ", e)
         return jsonify(error=str(e)), 500
-
-    except Exception as e:
-        print("Error in generate endpoint: ", e)
-        return jsonify(error=str(e)), 500
-
 
 @app.errorhandler(500)
 def server_error(e):
