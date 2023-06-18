@@ -105,8 +105,9 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         return output
 
     except Exception as e:
-        print(f"Error in generate function: {str(e)}")
-        return {"result": "An error occurred during generation"}
+        error_message = f"Error in generate function: {str(e)}"
+        print(error_message)
+        return jsonify({"result": "An error occurred during generation", "error": error_message})
 
 def get_conversions_col():
     conversions_col = None
