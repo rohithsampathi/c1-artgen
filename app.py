@@ -148,7 +148,7 @@ def generate():
 
     # Use the generate_article function
     result = generate_article(body, search_terms, theme, num_words, market_name)
-    output = {"result": result["result"]}
+    output = {"result": result.get("result")}
 
     # Handle potential database error
     if 'db_error' in result:
@@ -161,9 +161,9 @@ def generate():
 @app.errorhandler(500)
 def server_error(e):
     print("Internal server error: ", str(e))
-    response = jsonify(error='Internal server error'), 500
+    response = jsonify({"error": "Internal server error"})
     add_cors_headers(response)
-    return response
+    return response, 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8000)
