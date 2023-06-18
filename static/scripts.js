@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000"; // Replace with your deployed API's URL if not running locally
+const API_URL = "http://35.172.213.74:5000";
 
 function updateElapsedTime(startTime) {
   const elapsedTimeElement = document.getElementById("elapsed-time-value");

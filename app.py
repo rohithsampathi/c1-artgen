@@ -27,10 +27,6 @@ db = mongo.db
 # Initialize OpenAI
 openai.api_key = app.config["OPENAI_API_KEY"]
 
-def get_s3_static_url(filename):
-    s3_url = f's3://marketbrahma/static/{filename}'
-    return s3_url
-
 
 def generate_article(body, search_terms, theme, num_words, market_name):
     writing_style = f"""
@@ -140,8 +136,9 @@ def main():
 
 @app.route("/")
 def index():
-    css_file = get_s3_static_url('css/styles.css')
-    js_file = get_s3_static_url('js/script.js')
+    css_file = 'https://d2nb6w4uhiu3h2.cloudfront.net/static/styles.css'
+    js_file = 'https://d2nb6w4uhiu3h2.cloudfront.net/static/scripts.js'
+
     return render_template("index.html", css_file=css_file, js_file=js_file)
 
 
