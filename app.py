@@ -17,7 +17,7 @@ class Config:
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable CORS for all routes
 app.config.from_object(Config)
 app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
@@ -160,6 +160,13 @@ def generate():
     except Exception as e:
         print("Error in generate endpoint: ", e)
         return jsonify(error=str(e)), 500
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"  # Allow requests from any domain
+    response.headers["Access-Control-Allow-Methods"] = "POST"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
 
 @app.errorhandler(500)
 def server_error(e):
