@@ -17,13 +17,13 @@ class Config:
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
+app.config["MONGO_URI"] = "mongodb+srv://Rohith:ValeyforgE!16@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
 db = mongo.db
 
+
 # Initialize OpenAI
 openai.api_key = app.config["OPENAI_API_KEY"]
-
 
 def generate_article(body, search_terms, theme, num_words, market_name):
     writing_style = f"""
@@ -79,7 +79,7 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         num_tokens = response['usage']['total_tokens'] if 'usage' in response and 'total_tokens' in response['usage'] else 0
 
         # Prepare the output
-        output = {"result": result.get("result")}
+        output = {"result": result}
 
         # Insert the conversion details into MongoDB
         conversion_data = {
@@ -105,9 +105,8 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         return output
 
     except Exception as e:
-        error_message = f"Error in generate function: {str(e)}"
-        print(error_message)
-        return jsonify({"result": "An error occurred during generation", "error": error_message})
+        print(f"Error in generate function: {str(e)}")
+        return {"result": "An error occurred during generation"}
 
 def get_conversions_col():
     conversions_col = None
@@ -117,53 +116,58 @@ def get_conversions_col():
         print("Failed to access MongoDB collection: ", str(e))
     return conversions_col
 
+def main():
+    print("Enter the body text:")
+    body = input()
+    print("Enter the search terms:")
+    search_terms = input()
+    print("Enter the theme:")
+    theme = input()
+    print("Enter the number of words:")
+    num_words = int(input())
+    print("Enter the market name:")
+    market_name = input()
+    print("Generating article...")
+    result = generate_article(body, search_terms, theme, num_words, market_name)
+    print(result["result"])
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    return response
 
-@app.route("/api/generate", methods=["OPTIONS"])
-def generate_options():
-    response = jsonify()
-    add_cors_headers(response)
-    return response
 
-@app.route("/api/generate", methods=["POST"])
+@app.route("/generate", methods=["POST"])
 def generate():
-    if request.is_json:
-        data = request.get_json()
-    else:
-        data = request.form
+    try:
+        body = request.form["body"]
+        search_terms = request.form["search_terms"]
+        theme = request.form["theme"]
+        num_words = int(request.form["num_words"])
+        market_name = request.form["market"]
 
-    body = data.get("body")
-    search_terms = data.get("search_terms")
-    theme = data.get("theme")
-    num_words = int(data.get("num_words"))
-    market_name = data.get("market")
+        result = generate_article(body, search_terms, theme, num_words, market_name)
+        output = {"result": result["result"]}
 
-    # Use the generate_article function
-    result = generate_article(body, search_terms, theme, num_words, market_name)
-    output = {"result": result.get("result")}
+        # Handle potential database error
+        if 'db_error' in result:
+            output['db_error'] = result['db_error']
 
-    # Handle potential database error
-    if 'db_error' in result:
-        output['db_error'] = result['db_error']
+        return jsonify(output)
 
-    response = jsonify(output)
-    add_cors_headers(response)
-    return response
+    except Exception as e:
+        print("Error in generate endpoint: ", e)
+        return jsonify(error=str(e)), 500
+
+    except Exception as e:
+        print("Error in generate endpoint: ", e)
+        return jsonify(error=str(e)), 500
+
 
 @app.errorhandler(500)
 def server_error(e):
     print("Internal server error: ", str(e))
-    response = jsonify({"error": "Internal server error"})
-    add_cors_headers(response)
-    return response, 500
+    return jsonify(error='Internal server error'), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000)
+    app.run(debug=True)
