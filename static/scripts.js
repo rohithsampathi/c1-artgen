@@ -1,4 +1,4 @@
-const API_URL = "http://54.242.81.142:8000";
+const API_URL = "http://167.71.229.221:5000";
 
 function updateElapsedTime(startTime) {
   const elapsedTimeElement = document.getElementById("elapsed-time-value");
@@ -52,8 +52,7 @@ if (generateBtn) {
     formData.append("market", marketNameInput.value);
 
     try {
-      // Remove the headers option from the fetch function
-      const response = await fetch(`${API_URL}/api/generate`, { method: "POST", body: formData });
+      const response = await fetch(`${API_URL}/generate`, { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error ? data.error : "Network response was not ok");

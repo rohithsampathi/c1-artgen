@@ -134,10 +134,6 @@ def main():
     result = generate_article(body, search_terms, theme, num_words, market_name)
     print(result["result"])
 
-@app.route("/")
-def index():
-    return render_template("index.html")
-
 
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -168,4 +164,4 @@ def server_error(e):
     return jsonify(error='Internal server error'), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
