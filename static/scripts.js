@@ -1,4 +1,4 @@
-const API_URL = "http://139.59.25.125:8000";
+const API_URL = "http://54.242.81.142:8000";
 
 function updateElapsedTime(startTime) {
   const elapsedTimeElement = document.getElementById("elapsed-time-value");
