@@ -52,6 +52,7 @@ if (generateBtn) {
     formData.append("market", marketNameInput.value);
 
     try {
+      // Remove the headers option from the fetch function
       const response = await fetch(`${API_URL}/api/generate`, { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) {

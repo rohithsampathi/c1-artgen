@@ -126,12 +126,15 @@ def index():
 @cross_origin()
 def generate():
     try:
-        data = request.get_json()
-        body = data["body"]
-        search_terms = data["search_terms"]
-        theme = data["theme"]
-        num_words = int(data["num_words"])
-        market_name = data["market"]
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form
+        body = data.get("body")
+        search_terms = data.get("search_terms")
+        theme = data.get("theme")
+        num_words = int(data.get("num_words"))
+        market_name = data.get("market")
 
         # Use the generate_article function
         result = generate_article(body, search_terms, theme, num_words, market_name)
