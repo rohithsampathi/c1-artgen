@@ -16,7 +16,7 @@ class Config:
     MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD")
 
 # Initialize the Flask application and MongoDB connection
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_url_path="/static")
 CORS(app, resources={r'*': {'origins': '*'}})
 app.config.from_object(Config)
 app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
@@ -156,7 +156,7 @@ def generate():
     except Exception as e:
         print("Error in generate endpoint: ", e)
         return jsonify(error=str(e)), 500
-
+ 
 
 @app.errorhandler(500)
 def server_error(e):
