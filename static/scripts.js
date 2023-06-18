@@ -1,4 +1,4 @@
-const API_URL = "http://35.172.213.74:5000";
+const API_URL = "http://139.59.25.125:8000";
 
 function updateElapsedTime(startTime) {
   const elapsedTimeElement = document.getElementById("elapsed-time-value");
@@ -52,7 +52,7 @@ if (generateBtn) {
     formData.append("market", marketNameInput.value);
 
     try {
-      const response = await fetch(`${API_URL}/generate`, { method: "POST", body: formData });
+      const response = await fetch(`${API_URL}/api/generate`, { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error ? data.error : "Network response was not ok");
