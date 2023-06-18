@@ -79,7 +79,7 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         num_tokens = response['usage']['total_tokens'] if 'usage' in response and 'total_tokens' in response['usage'] else 0
 
         # Prepare the output
-        output = {"result": result}
+        output = {"result": result.get("result")}
 
         # Insert the conversion details into MongoDB
         conversion_data = {
