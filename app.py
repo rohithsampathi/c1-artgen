@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 import openai
@@ -6,7 +6,7 @@ import os
 import datetime
 from urllib.parse import quote
 import boto3
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 # Load environment variables
 load_dotenv()
@@ -17,7 +17,7 @@ class Config:
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 app.config.from_object(Config)
 app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
@@ -118,26 +118,12 @@ def get_conversions_col():
         print("Failed to access MongoDB collection: ", str(e))
     return conversions_col
 
-def main():
-    print("Enter the body text:")
-    body = input()
-    print("Enter the search terms:")
-    search_terms = input()
-    print("Enter the theme:")
-    theme = input()
-    print("Enter the number of words:")
-    num_words = int(input())
-    print("Enter the market name:")
-    market_name = input()
-    print("Generating article...")
-    result = generate_article(body, search_terms, theme, num_words, market_name)
-    print(result["result"])
-
 @app.route("/")
 def index():
     return render_template("index.html")
 
 @app.route("/api/generate", methods=["POST"])
+@cross_origin()
 def generate():
     try:
         data = request.get_json()
@@ -160,13 +146,6 @@ def generate():
     except Exception as e:
         print("Error in generate endpoint: ", e)
         return jsonify(error=str(e)), 500
-
-@app.after_request
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"  # Allow requests from any domain
-    response.headers["Access-Control-Allow-Methods"] = "POST"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    return response
 
 @app.errorhandler(500)
 def server_error(e):
