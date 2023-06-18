@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, current_app, send_from_directory
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
 import openai
@@ -6,6 +6,7 @@ import os
 import datetime
 from urllib.parse import quote
 import boto3
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv()
@@ -16,10 +17,12 @@ class Config:
 
 # Initialize the Flask application and MongoDB connection
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 app.config.from_object(Config)
-app.config["MONGO_URI"] = "mongodb+srv://Rohith:ValeyforgE!16@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
+app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
 mongo = PyMongo(app)
 db = mongo.db
+
 
 
 # Initialize OpenAI
@@ -154,10 +157,6 @@ def generate():
             output['db_error'] = result['db_error']
 
         return jsonify(output)
-
-    except Exception as e:
-        print("Error in generate endpoint: ", e)
-        return jsonify(error=str(e)), 500
 
     except Exception as e:
         print("Error in generate endpoint: ", e)
