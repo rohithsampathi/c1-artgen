@@ -1,5 +1,3 @@
-const API_URL = "http://167.71.229.221:5000";
-
 function updateElapsedTime(startTime) {
   const elapsedTimeElement = document.getElementById("elapsed-time-value");
   const currentTime = new Date();
@@ -8,14 +6,14 @@ function updateElapsedTime(startTime) {
 }
 
 function adjustHeight(element, defaultHeight) {
-  element.style.height = defaultHeight;
-  element.style.height = `${element.scrollHeight}px`;
+  element.style.height = defaultHeight; // Reset element height in case of decreasing text lines
+  element.style.height = `${element.scrollHeight}px`; // Set element height equal to scroll height
 }
 
 const dynamicHeightInputs = Array.from(document.getElementsByClassName("dynamic-height"));
 dynamicHeightInputs.forEach(input => {
-  input.addEventListener("input", () => adjustHeight(input, "1em"));
-  adjustHeight(input, "1em");
+  input.addEventListener('input', () => adjustHeight(input, '1em'));
+  adjustHeight(input, '1em');
 });
 
 const generateBtn = document.getElementById("generate-btn");
@@ -52,14 +50,14 @@ if (generateBtn) {
     formData.append("market", marketNameInput.value);
 
     try {
-      const response = await fetch(`${API_URL}/generate`, { method: "POST", body: formData });
+      const response = await fetch("/generate", { method: "POST", body: formData });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error ? data.error : "Network response was not ok");
       }
       loader.classList.add("hidden");
       clearInterval(elapsedTimeInterval);
-      newsOutput.value = data.result;
+      newsOutput.value = data.result; // <--- changed this line
     } catch (error) {
       console.error("Error:", error);
       loader.classList.add("hidden");
