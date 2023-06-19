@@ -134,6 +134,9 @@ def main():
     result = generate_article(body, search_terms, theme, num_words, market_name)
     print(result["result"])
 
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 @app.route("/generate", methods=["POST"])
 def generate():
