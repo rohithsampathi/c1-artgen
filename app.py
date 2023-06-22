@@ -1,32 +1,43 @@
-from flask import Flask, render_template, request, jsonify, current_app, send_from_directory
-from flask_pymongo import PyMongo
-from dotenv import load_dotenv
+from flask import Flask, render_template, request, jsonify
 import openai
-import os
 import datetime
-from urllib.parse import quote
-import boto3
-from flask_cors import CORS
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, func
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 # Load environment variables
 load_dotenv()
 
 class Config:
-    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-    MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD")
+    OPENAI_API_KEY = "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"
 
-# Initialize the Flask application and MongoDB connection
-app = Flask(__name__, template_folder="templates", static_url_path="/static")
-CORS(app, resources={r'*': {'origins': '*'}})
+# Initialize the Flask application
+app = Flask(__name__)
 app.config.from_object(Config)
-app.config["MONGO_URI"] = f"mongodb+srv://Rohith:{quote(app.config['MONGODB_PASSWORD'])}@montaigne.c676utg.mongodb.net/montaigne?retryWrites=true&w=majority"
-mongo = PyMongo(app)
-db = mongo.db
 
-
+Base = declarative_base()
 
 # Initialize OpenAI
 openai.api_key = app.config["OPENAI_API_KEY"]
+
+class GptTokenUsage(Base):
+    __tablename__ = 'token_usage'
+    id = Column(Integer, primary_key=True)
+    generation_tokens = Column(Integer, nullable=False)
+    total_tokens = Column(Integer, nullable=False)
+    cost = Column(Float, nullable=False)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+# Path to the SQLite file
+db_file = 'sqlite:///token_usage.db'
+
+# Creating engine and binding it to the Base class
+engine = create_engine(db_file)
+Base.metadata.create_all(engine)
+
+# Create a session to access the database
+Session = sessionmaker(bind=engine)
 
 def generate_article(body, search_terms, theme, num_words, market_name):
     writing_style = f"""
@@ -72,7 +83,7 @@ def generate_article(body, search_terms, theme, num_words, market_name):
                 {"role": "user", "content": f"Market Name: {market_name} \n Body: {body} \n Search Terms: {search_terms} \n Theme: {theme} \n Word Count: {num_words} ------------- End of News Content. Start Writing the Article Below -------- \n "},
             ],
             temperature=0.7,
-            max_tokens=1500,
+            max_tokens=3000,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0.3,
@@ -84,40 +95,35 @@ def generate_article(body, search_terms, theme, num_words, market_name):
         # Prepare the output
         output = {"result": result}
 
-        # Insert the conversion details into MongoDB
-        conversion_data = {
-            'timestamp': datetime.datetime.utcnow(),
-            'input': {
-                'market_name': market_name,
-                'search_terms': search_terms,
-                'theme': theme,
-                'num_words': num_words,
-                'body': body,
-            },
-            'output': result,
-            'num_tokens': num_tokens,
-        }
+        # Calculating the cost
+        cost = 0.06 * num_tokens / 1000
 
-        # Try to insert the data into MongoDB
-        try:
-            mongo.db.articles.insert_one(conversion_data)
-        except Exception as e:
-            print(f"Failed to insert data into MongoDB: {e}")
-            output['db_error'] = str(e)
+        # Insert the details into SQLite database
+        session = Session()
+        token_entry = GptTokenUsage(generation_tokens=num_tokens,
+                                     total_tokens=num_tokens,
+                                     cost=cost)
+        session.add(token_entry)
+        session.commit()
 
+        # Fetch the total tokens and total cost used so far
+        total_tokens_so_far = session.query(
+            func.sum(GptTokenUsage.total_tokens)).scalar()
+        total_cost_so_far = session.query(
+            func.sum(GptTokenUsage.cost)).scalar()
+
+        print(f"Tokens used in this generation: {num_tokens}")
+        print(f"Cost for this generation: ${cost:.5f}")
+        print(f"Total tokens used so far: {total_tokens_so_far}")
+        print(f"Total cost so far: ${total_cost_so_far:.5f}")
+
+        session.close()
+        
         return output
 
     except Exception as e:
         print(f"Error in generate function: {str(e)}")
         return {"result": "An error occurred during generation"}
-
-def get_conversions_col():
-    conversions_col = None
-    try:
-        conversions_col = mongo.db.articles
-    except AttributeError as e:
-        print("Failed to access MongoDB collection: ", str(e))
-    return conversions_col
 
 def main():
     print("Enter the body text:")
@@ -135,7 +141,7 @@ def main():
     print(result["result"])
 
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
 @app.route("/generate", methods=["POST"])
@@ -149,17 +155,12 @@ def generate():
 
         result = generate_article(body, search_terms, theme, num_words, market_name)
         output = {"result": result["result"]}
-
-        # Handle potential database error
-        if 'db_error' in result:
-            output['db_error'] = result['db_error']
-
+        
         return jsonify(output)
 
     except Exception as e:
         print("Error in generate endpoint: ", e)
         return jsonify(error=str(e)), 500
- 
 
 @app.errorhandler(500)
 def server_error(e):
@@ -167,4 +168,4 @@ def server_error(e):
     return jsonify(error='Internal server error'), 500
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
